@@ -12,3 +12,38 @@ jobs:
     uses: ./.github/workflows/hello-template.yml
     with:
       username: Mona
+
+  build:
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/push-image.yml
+    permissions:
+      contents: read
+      packages: write
+
+  update-gitops:
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cloner le dépôt d'infrastructure
+        uses: actions/checkout@v4
+        with:
+          repository: HiniaIbel/gitops-infra
+          token: ${{ secrets.GITOPS_PAT }}
+          path: infra-repo
+
+      - name: Installer Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Mettre à jour la version de l'image
+        working-directory: ./infra-repo/dev
+        run: kustomize edit set image spring-petclinic=ghcr.io/hiniaibel/spring-petclinic:${{ github.sha }}
+
+      - name: Commit et Push vers le dépôt d'infrastructure
+        working-directory: ./infra-repo
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "Auto-update image to tag ${{ github.sha }}"
+          git push

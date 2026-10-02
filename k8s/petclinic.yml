@@ -46,12 +46,28 @@ spec:
               containerPort: 8080
           livenessProbe:
             httpGet:
-              path: /livez
-              port: http
+              path: /tp6/actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /readyz
-              port: http
+              path: /tp6/actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          startupProbe:
+            httpGet:
+              path: /tp6/actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 30
           volumeMounts:
             - mountPath: /bindings/secret
               name: binding
